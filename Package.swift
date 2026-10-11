@@ -12,6 +12,9 @@ let package = Package(
         .target(
             name: "ZancunjiaCore",
             path: "Sources/ZancunjiaCore",
+            resources: [
+                .process("Resources")
+            ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)
             ]

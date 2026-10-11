@@ -113,7 +113,7 @@ final class ThumbView: NSView, NSDraggingSource {
 
     override func menu(for event: NSEvent) -> NSMenu? {
         let menu = NSMenu()
-        let preview = menu.addItem(withTitle: "快速预览", action: #selector(showPreview), keyEquivalent: "")
+        let preview = menu.addItem(withTitle: L10n.t("action.quick_look"), action: #selector(showPreview), keyEquivalent: "")
         preview.target = self
         return menu
     }

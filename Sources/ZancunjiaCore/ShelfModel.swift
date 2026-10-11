@@ -92,7 +92,7 @@ public final class ShelfModel {
     public func importMedia(_ payloads: [MediaPayload]) async {
         guard alive, !Task.isCancelled else { return }
         if payloads.count > limit {
-            flash("一次最多放 \(limit) 个")
+            flash(L10n.format("toast.limit", limit))
         }
         for payload in payloads.prefix(limit) {
             guard alive, !Task.isCancelled else { return }
@@ -120,10 +120,10 @@ public final class ShelfModel {
         switch item.kind {
         case .image:
             pasteboard.writeObjects([ScratchFileWriter(url: item.fileURL)])
-            flash("已复制")
+            flash(L10n.t("toast.copied"))
         case .video:
             pasteboard.writeObjects([ScratchFileWriter(url: item.fileURL, isVideo: true)])
-            flash("已复制视频")
+            flash(L10n.t("toast.copied_video"))
         case .livePhoto:
             if let videoURL = item.pairedVideoURL {
                 pasteboard.writeObjects([
@@ -133,7 +133,7 @@ public final class ShelfModel {
             } else {
                 pasteboard.writeObjects([ScratchFileWriter(url: item.fileURL)])
             }
-            flash("已复制实况照片")
+            flash(L10n.t("toast.copied_live_photo"))
         }
         suppressPasteboard(changeCount: pasteboard.changeCount)
     }
@@ -156,11 +156,11 @@ public final class ShelfModel {
     }
 
     public func remove(_ id: UUID, undoable: Bool = false) {
-        removeItems(ids: [id], undoable: undoable, actionName: "移除")
+        removeItems(ids: [id], undoable: undoable, actionName: L10n.t("action.remove"), toastKey: "toast.removed_undo")
     }
 
     public func clear(undoable: Bool = false) {
-        removeItems(ids: items.map(\.id), undoable: undoable, actionName: "清空")
+        removeItems(ids: items.map(\.id), undoable: undoable, actionName: L10n.t("action.clear"), toastKey: "toast.cleared_undo")
     }
 
     public func undo() {
@@ -181,7 +181,7 @@ public final class ShelfModel {
         let item: ScratchItem
     }
 
-    private func removeItems(ids: [UUID], undoable: Bool, actionName: String) {
+    private func removeItems(ids: [UUID], undoable: Bool, actionName: String, toastKey: String) {
         let ids = Set(ids)
         let removed = items.enumerated().compactMap { index, item in
             ids.contains(item.id) ? RemovedItem(index: index, item: item) : nil
@@ -192,24 +192,24 @@ public final class ShelfModel {
 
         if undoable {
             undoManager.registerUndo(withTarget: self) { target in
-                target.restore(removed, actionName: actionName)
+                target.restore(removed, actionName: actionName, toastKey: toastKey)
             }
             undoManager.setActionName(actionName)
-            flash("已\(actionName) · ⌘Z 撤销")
+            flash(L10n.t(toastKey))
         } else {
             deleteFiles(for: removed.map(\.item))
         }
     }
 
-    private func restore(_ removed: [RemovedItem], actionName: String) {
+    private func restore(_ removed: [RemovedItem], actionName: String, toastKey: String) {
         for entry in removed.sorted(by: { $0.index < $1.index }) {
             items.insert(entry.item, at: min(entry.index, items.count))
         }
         undoManager.registerUndo(withTarget: self) { target in
-            target.removeItems(ids: removed.map(\.item.id), undoable: true, actionName: actionName)
+            target.removeItems(ids: removed.map(\.item.id), undoable: true, actionName: actionName, toastKey: toastKey)
         }
         undoManager.setActionName(actionName)
-        flash("已恢复")
+        flash(L10n.t("toast.restored"))
     }
 
     private func deleteFiles(for items: [ScratchItem]) {
@@ -240,7 +240,7 @@ public final class ShelfModel {
 
         let id = UUID()
         let createdAt = Date()
-        let base = filenameBase(for: createdAt, id: id, prefix: "实况照片")
+        let base = filenameBase(for: createdAt, id: id, prefix: L10n.t("file.live_photo"))
         let imgExt = imageURL.pathExtension.isEmpty ? "heic" : imageURL.pathExtension
         let videoExt = videoURL.pathExtension.isEmpty ? "mov" : videoURL.pathExtension
         do {
@@ -287,7 +287,7 @@ public final class ShelfModel {
 
         let id = UUID()
         let createdAt = Date()
-        let base = filenameBase(for: createdAt, id: id, prefix: "视频")
+        let base = filenameBase(for: createdAt, id: id, prefix: L10n.t("file.video"))
         let videoExt = fileURL.pathExtension.isEmpty ? "mov" : fileURL.pathExtension
         do {
             let destVideoURL = try store.copyFile(from: fileURL, named: "\(base).\(videoExt)")
@@ -337,7 +337,7 @@ public final class ShelfModel {
 
         let id = UUID()
         let createdAt = Date()
-        let base = filenameBase(for: createdAt, id: id, prefix: "截图")
+        let base = filenameBase(for: createdAt, id: id, prefix: L10n.t("file.screenshot"))
         do {
             let url = try store.write(encoded.png, named: "\(base).png")
             let item = ScratchItem(

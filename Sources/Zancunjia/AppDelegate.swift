@@ -85,7 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } catch {
             ShelfLog.main.error("启动失败 \(error.localizedDescription, privacy: .public)")
             let alert = NSAlert()
-            alert.messageText = "SnapShelf 打不开"
+            alert.messageText = L10n.t("error.cannot_open")
             alert.informativeText = error.localizedDescription
             alert.runModal()
             NSApp.terminate(nil)
@@ -140,8 +140,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         captureItem?.state = settings.captureEnabled ? .on : .off
         undoItem?.isEnabled = model?.canUndo == true
         undoItem?.title = model?.undoActionName.isEmpty == false
-            ? "撤销\(model?.undoActionName ?? "")"
-            : "撤销"
+            ? L10n.format("action.undo_named", model?.undoActionName ?? "")
+            : L10n.t("action.undo")
         refreshPlacementChecks(in: menu)
     }
 
@@ -169,7 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func showAbout(_ sender: Any?) {
         NSApp.activate()
         let credits = NSAttributedString(
-            string: "自动收集剪贴板里的图片和视频，只暂存在这台 Mac。\n鼠标放上去展开，点一下固定。退出后所有暂存内容都会清空。",
+            string: L10n.t("about.credits"),
             attributes: [
                 .font: NSFont.systemFont(ofSize: 11),
                 .foregroundColor: NSColor.secondaryLabelColor,
@@ -221,23 +221,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var edgeTitle: String {
         if settings.placement == .dock, controller?.dockSide != .bottom {
-            return settings.edge == .left ? "换到上边" : "换到下边"
+            return settings.edge == .left ? L10n.t("action.move_top") : L10n.t("action.move_bottom")
         }
-        return settings.edge == .left ? "换到右边" : "换到左边"
+        return settings.edge == .left ? L10n.t("action.move_right") : L10n.t("action.move_left")
     }
 
     private func placementTitle(_ placement: ShelfPlacement) -> String {
         switch placement {
-        case .sidebar: "侧边栏"
-        case .island: "灵动岛"
-        case .dock: "Dock 栏"
+        case .sidebar: L10n.t("placement.sidebar")
+        case .island: L10n.t("placement.top_capsule")
+        case .dock: L10n.t("placement.dock")
         }
     }
 
     private func appearanceTitle(_ appearance: ShelfAppearance) -> String {
         switch appearance {
-        case .clear: "清透"
-        case .regular: "磨砂"
+        case .clear: L10n.t("appearance.clear")
+        case .regular: L10n.t("appearance.frosted")
         }
     }
 
@@ -249,13 +249,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         appItem.submenu = appMenu
         appMenu.delegate = self
 
-        let about = appMenu.addItem(withTitle: "关于 SnapShelf", action: #selector(showAbout(_:)), keyEquivalent: "")
+        let about = appMenu.addItem(withTitle: L10n.t("menu.about"), action: #selector(showAbout(_:)), keyEquivalent: "")
         about.target = self
         appMenu.addItem(.separator())
         addActions(to: appMenu, clearShortcut: "k")
         appMenu.addItem(.separator())
         appMenu.addItem(
-            withTitle: "退出 SnapShelf",
+            withTitle: L10n.t("menu.quit"),
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         )
@@ -264,11 +264,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func addActions(to menu: NSMenu, clearShortcut: String) {
-        let open = menu.addItem(withTitle: "打开 SnapShelf", action: #selector(showShelf), keyEquivalent: "o")
+        let open = menu.addItem(withTitle: L10n.t("menu.open"), action: #selector(showShelf), keyEquivalent: "o")
         open.keyEquivalentModifierMask = [.command, .shift]
         open.target = self
 
-        let placementItem = NSMenuItem(title: "出现在", action: nil, keyEquivalent: "")
+        let placementItem = NSMenuItem(title: L10n.t("menu.appear_in"), action: nil, keyEquivalent: "")
         let placementMenu = NSMenu()
         for placement in [ShelfPlacement.sidebar, .island, .dock] {
             let item = placementMenu.addItem(
@@ -283,7 +283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         placementItem.submenu = placementMenu
         menu.addItem(placementItem)
 
-        let appearanceItem = NSMenuItem(title: "玻璃效果", action: nil, keyEquivalent: "")
+        let appearanceItem = NSMenuItem(title: L10n.t("appearance.glass"), action: nil, keyEquivalent: "")
         let appearanceMenu = NSMenu()
         for appearance in [ShelfAppearance.clear, .regular] {
             let item = appearanceMenu.addItem(
@@ -299,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(appearanceItem)
 
         let capture = menu.addItem(
-            withTitle: "自动收集剪贴板媒体",
+            withTitle: L10n.t("settings.auto_collect"),
             action: #selector(toggleCapture(_:)),
             keyEquivalent: ""
         )
@@ -317,14 +317,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        let undo = menu.addItem(withTitle: "撤销", action: #selector(undoLast), keyEquivalent: "z")
+        let undo = menu.addItem(withTitle: L10n.t("action.undo"), action: #selector(undoLast), keyEquivalent: "z")
         undo.target = self
         undo.isEnabled = model?.canUndo == true
         if menu === (NSApp.mainMenu?.item(at: 0)?.submenu) || undoItem == nil {
             undoItem = undo
         }
 
-        let clear = menu.addItem(withTitle: "清空", action: #selector(clearAll), keyEquivalent: clearShortcut)
+        let clear = menu.addItem(withTitle: L10n.t("action.clear"), action: #selector(clearAll), keyEquivalent: clearShortcut)
         clear.target = self
     }
 

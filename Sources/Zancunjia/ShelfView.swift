@@ -109,9 +109,9 @@ struct ShelfView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help("点击展开。把图片或视频拖到这里就能暂存")
-        .accessibilityLabel(model.items.isEmpty ? "灵动岛暂存架，空" : "灵动岛暂存架，当前暂存 \(model.items.count) 项")
-        .accessibilityHint("点按固定展开，把图片或视频拖到这里暂存")
+        .help(L10n.t("help.expand_drop"))
+        .accessibilityLabel(model.items.isEmpty ? L10n.t("a11y.capsule.empty") : L10n.format("a11y.capsule.count", model.items.count))
+        .accessibilityHint(L10n.t("a11y.expand_drop"))
     }
 
     @ViewBuilder
@@ -135,12 +135,12 @@ struct ShelfView: View {
                     Image(systemName: "photo.on.rectangle.angled")
                         .font(.system(size: 22, weight: .regular))
                         .foregroundStyle(.white.opacity(0.55))
-                    Text(settings.captureEnabled ? "媒体会停在这里" : "自动收集已暂停")
+                    Text(settings.captureEnabled ? L10n.t("empty.media_here") : L10n.t("empty.paused"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.88))
                     Text(settings.captureEnabled
-                         ? "剪贴板媒体只暂存在本机，退出即清空"
-                         : "仍可把图片或视频拖到刘海上")
+                         ? L10n.t("empty.privacy")
+                         : L10n.t("empty.drag_capsule"))
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.42))
                 }
@@ -182,8 +182,8 @@ struct ShelfView: View {
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
-            .help(chrome.isPinned ? "取消固定" : "固定打开")
-            .accessibilityLabel(chrome.isPinned ? "取消固定" : "固定打开")
+            .help(chrome.isPinned ? L10n.t("action.unpin") : L10n.t("action.pin"))
+            .accessibilityLabel(chrome.isPinned ? L10n.t("action.unpin") : L10n.t("action.pin"))
             Button {
                 model.clear(undoable: true)
             } label: {
@@ -194,20 +194,20 @@ struct ShelfView: View {
             }
             .buttonStyle(.plain)
             .disabled(model.items.isEmpty)
-            .help("清空")
-            .accessibilityLabel("清空")
+            .help(L10n.t("action.clear"))
+            .accessibilityLabel(L10n.t("action.clear"))
         }
         .padding(.horizontal, 22)
         .frame(height: 34)
     }
 
     private var islandCountTitle: String {
-        if !model.selectedIDs.isEmpty { return "\(model.selectedIDs.count) 项已选" }
-        return model.items.isEmpty ? "暂存" : "\(model.items.count) 项"
+        if !model.selectedIDs.isEmpty { return L10n.format("status.selected", model.selectedIDs.count) }
+        return model.items.isEmpty ? L10n.t("action.stash") : L10n.format("status.items", model.items.count)
     }
 
     private static let islandDateStyle = Date.FormatStyle(date: .omitted, time: .standard)
-        .locale(Locale(identifier: "zh_CN"))
+        .locale(.autoupdatingCurrent)
 
     private func islandClock(_ date: Date) -> String {
         date.formatted(Self.islandDateStyle)
@@ -268,19 +268,19 @@ struct ShelfView: View {
                         .frame(width: 18, height: 18)
                 }
                 .buttonStyle(.plain)
-                .help("移除")
-                .accessibilityLabel("移除")
+                .help(L10n.t("action.remove"))
+                .accessibilityLabel(L10n.t("action.remove"))
             }
             .padding(.trailing, 12)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(mediaAccessibilityLabel(for: item))
-        .accessibilityHint("点按复制，空格预览，按住 Command 点按可多选")
-        .help("点按复制 · 空格或右键预览 · ⌘点选多项")
-        .accessibilityAction(named: model.selectedIDs.contains(item.id) ? "取消选择" : "选择") {
+        .accessibilityHint(L10n.t("a11y.item_hint"))
+        .help(L10n.t("help.click_copy"))
+        .accessibilityAction(named: model.selectedIDs.contains(item.id) ? L10n.t("action.deselect") : L10n.t("action.select")) {
             model.toggleSelection(item.id)
         }
-        .accessibilityAction(named: "预览") { preview(item) }
+        .accessibilityAction(named: L10n.t("action.preview")) { preview(item) }
     }
 
     private func handleClick(_ item: ScratchItem, modifiers: NSEvent.ModifierFlags) {
@@ -321,9 +321,9 @@ struct ShelfView: View {
             .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(.plain)
-        .help("点击固定。把图片或视频拖到这里就能暂存")
-        .accessibilityLabel(model.items.isEmpty ? "Dock 栏里的暂存架，空" : "Dock 栏里的暂存架，当前暂存 \(model.items.count) 项")
-        .accessibilityHint("点按固定展开，把图片或视频拖到这里暂存")
+        .help(L10n.t("help.pin_drop"))
+        .accessibilityLabel(model.items.isEmpty ? L10n.t("a11y.dock.empty") : L10n.format("a11y.dock.count", model.items.count))
+        .accessibilityHint(L10n.t("a11y.expand_drop"))
     }
 
     private var dockGlyph: some View {
@@ -341,7 +341,7 @@ struct ShelfView: View {
     }
 
     private var dockCount: some View {
-        Text(model.items.isEmpty ? "暂存" : "\(model.items.count)")
+        Text(model.items.isEmpty ? L10n.t("action.stash") : "\(model.items.count)")
             .font(.system(size: 12, weight: .semibold, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(.primary)
@@ -388,7 +388,7 @@ struct ShelfView: View {
                     .font(.system(size: 15, weight: .medium))
                     .symbolEffect(.bounce, value: model.arrivalCount)
             }
-            Text(model.items.isEmpty ? "暂存" : "\(model.items.count)")
+            Text(model.items.isEmpty ? L10n.t("action.stash") : "\(model.items.count)")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -403,10 +403,10 @@ struct ShelfView: View {
         .frame(width: ShelfGeometry.tabWidth)
         .frame(maxHeight: .infinity)
         .contentShape(Rectangle())
-        .help(chrome.isPinned ? "点击收起。按住可上下移动" : "点击固定。按住可上下移动")
+        .help(chrome.isPinned ? L10n.t("help.tab_pinned") : L10n.t("help.tab_unpinned"))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("暂存架侧边栏标签，当前暂存 \(model.items.count) 项")
-        .accessibilityHint(chrome.isPinned ? "点按收起，按住上下拖动" : "点按固定展开，按住上下拖动")
+        .accessibilityLabel(L10n.format("a11y.sidebar", model.items.count))
+        .accessibilityHint(chrome.isPinned ? L10n.t("a11y.tab_pinned") : L10n.t("a11y.tab_unpinned"))
     }
 
     private var chevron: String {
@@ -469,8 +469,8 @@ struct ShelfView: View {
 
     private var footerHint: String {
         model.selectedIDs.isEmpty
-            ? "点一下复制 · 空格/右键预览 · ⌘点选多项"
-            : "已选 \(model.selectedIDs.count) 项 · 拖动成组移出 · Esc 取消"
+            ? L10n.t("footer.click_copy")
+            : L10n.format("footer.selected", model.selectedIDs.count)
     }
 
     private var header: some View {
@@ -484,7 +484,7 @@ struct ShelfView: View {
             }
             Spacer(minLength: 0)
             pinButton
-            Button("清空") { model.clear(undoable: true) }
+            Button(L10n.t("action.clear")) { model.clear(undoable: true) }
                 .buttonStyle(.plain)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -496,8 +496,12 @@ struct ShelfView: View {
     }
 
     private var headerSubtitle: String {
-        let count = model.items.isEmpty ? "" : "\(model.items.count) 项 · "
-        return "\(count)\(settings.captureEnabled ? "自动收集" : "已暂停") · 退出后清空"
+        if model.items.isEmpty {
+            return settings.captureEnabled ? L10n.t("header.idle_collect") : L10n.t("header.idle_paused")
+        }
+        return settings.captureEnabled
+            ? L10n.format("header.count_collect", model.items.count)
+            : L10n.format("header.count_paused", model.items.count)
     }
 
     private var pinButton: some View {
@@ -511,8 +515,8 @@ struct ShelfView: View {
                 )
         }
         .buttonStyle(.plain)
-        .help(chrome.isPinned ? "取消固定" : "固定打开")
-        .accessibilityLabel(chrome.isPinned ? "取消固定" : "固定打开")
+        .help(chrome.isPinned ? L10n.t("action.unpin") : L10n.t("action.pin"))
+        .accessibilityLabel(chrome.isPinned ? L10n.t("action.unpin") : L10n.t("action.pin"))
     }
 
     private var empty: some View {
@@ -520,11 +524,11 @@ struct ShelfView: View {
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: 28, weight: .regular))
                 .foregroundStyle(.secondary)
-            Text(settings.captureEnabled ? "媒体会停在这里" : "自动收集已暂停")
+            Text(settings.captureEnabled ? L10n.t("empty.media_here") : L10n.t("empty.paused"))
                 .font(.system(size: 13, weight: .semibold))
             Text(settings.captureEnabled
-                 ? "按 ⌃⌘⇧4 截到剪贴板，或直接拖入图片和视频。\n只暂存在本机，退出后清空。"
-                 : "仍可把图片或视频拖进来。\n可在 SnapShelf 菜单重新开启自动收集。")
+                 ? L10n.t("empty.sidebar_capture")
+                 : L10n.t("empty.sidebar_paused"))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -594,8 +598,8 @@ private struct ScreenshotCell: View {
                 }
                 .buttonStyle(.plain)
                 .padding(6)
-                .help("移除")
-                .accessibilityLabel("移除")
+                .help(L10n.t("action.remove"))
+                .accessibilityLabel(L10n.t("action.remove"))
             }
             .frame(height: imageHeight)
             .frame(maxWidth: .infinity)
@@ -618,13 +622,13 @@ private struct ScreenshotCell: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(mediaAccessibilityLabel(for: item))
-        .accessibilityHint("点按复制，空格预览，按住 Command 点按可多选")
-        .help("点按复制 · 空格或右键预览 · ⌘点选多项")
-        .accessibilityAction(named: model.selectedIDs.contains(item.id) ? "取消选择" : "选择") {
+        .accessibilityHint(L10n.t("a11y.item_hint"))
+        .help(L10n.t("help.click_copy"))
+        .accessibilityAction(named: model.selectedIDs.contains(item.id) ? L10n.t("action.deselect") : L10n.t("action.select")) {
             model.toggleSelection(item.id)
         }
-        .accessibilityAction(named: "预览", preview)
-        .accessibilityAction(named: "移除", remove)
+        .accessibilityAction(named: L10n.t("action.preview"), preview)
+        .accessibilityAction(named: L10n.t("action.remove"), remove)
     }
 
     private func handleClick(_ modifiers: NSEvent.ModifierFlags) {
@@ -676,8 +680,8 @@ private struct CachedImage: View {
 
 private func formatAge(_ date: Date, now: Date) -> String {
     let seconds = now.timeIntervalSince(date)
-    if seconds < 45 { return "刚刚" }
-    if seconds < 3600 { return "\(max(1, Int(seconds / 60))) 分钟前" }
+    if seconds < 45 { return L10n.t("time.just_now") }
+    if seconds < 3600 { return L10n.format("time.minutes_ago", max(1, Int(seconds / 60))) }
     return date.formatted(date: .omitted, time: .shortened)
 }
 
@@ -700,12 +704,12 @@ private func subtitle(for item: ScratchItem, now: Date) -> String {
     let ageStr = formatAge(item.createdAt, now: now)
     switch item.kind {
     case .livePhoto:
-        return "\(item.pixelWidth)×\(item.pixelHeight) · 实况 · \(ageStr)"
+        return L10n.format("subtitle.live", item.pixelWidth, item.pixelHeight, ageStr)
     case .video:
         let dur = formatDuration(item.duration)
-        return "\(item.pixelWidth)×\(item.pixelHeight) · \(dur) · \(ageStr)"
+        return L10n.format("subtitle.video", item.pixelWidth, item.pixelHeight, dur, ageStr)
     case .image:
-        return "\(item.pixelWidth)×\(item.pixelHeight) · \(ageStr)"
+        return L10n.format("subtitle.image", item.pixelWidth, item.pixelHeight, ageStr)
     }
 }
 
@@ -713,11 +717,11 @@ private func subtitle(for item: ScratchItem, now: Date) -> String {
 private func mediaAccessibilityLabel(for item: ScratchItem) -> String {
     switch item.kind {
     case .livePhoto:
-        return "实况照片，\(item.pixelWidth) 乘 \(item.pixelHeight)"
+        return L10n.format("a11y.live_photo", item.pixelWidth, item.pixelHeight)
     case .video:
-        return "视频，\(item.pixelWidth) 乘 \(item.pixelHeight)，时长 \(formatDuration(item.duration))"
+        return L10n.format("a11y.video", item.pixelWidth, item.pixelHeight, formatDuration(item.duration))
     case .image:
-        return "图片，\(item.pixelWidth) 乘 \(item.pixelHeight)"
+        return L10n.format("a11y.image", item.pixelWidth, item.pixelHeight)
     }
 }
 

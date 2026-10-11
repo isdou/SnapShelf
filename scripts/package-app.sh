@@ -19,5 +19,9 @@ if [[ ! -f "$root/Support/AppIcon.icns" ]]; then
   swift "$root/scripts/make-icon.swift" "$root/Support"
 fi
 cp "$root/Support/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
+shopt -s nullglob
+for bundle in "$root/.build/$mode"/*.bundle; do
+  cp -R "$bundle" "$app/Contents/Resources/"
+done
 codesign --force --sign - --entitlements "$root/Support/SnapShelf.entitlements" "$app"
 echo "$app"

@@ -273,7 +273,7 @@ final class ScreenShelf {
         let width = min(ShelfGeometry.tabWidth, host.bounds.width)
         let x: CGFloat = settings.edge == .left ? 0 : max(host.bounds.width - width, 0)
         handle.frame = CGRect(x: x, y: 0, width: width, height: host.bounds.height)
-        handle.toolTip = "点击固定，按住可上下移动"
+        handle.toolTip = L10n.t("help.handle")
     }
 
     func pinOpen() {
@@ -302,7 +302,10 @@ final class ScreenShelf {
         let band = (screen.frame.minY - 40)...(screen.frame.maxY + 40)
         guard visible.height > 1, band.contains(point.y) else { return }
         if grabOffset == nil {
-            grabOffset = panel.frame.midY - point.y
+            // Hover has usually expanded the panel by the time the hold ends. The tall
+            // panel is clamped to the screen, so drag the bare tab, centered on the pointer.
+            grabOffset = chrome.isExpanded ? 0 : panel.frame.midY - point.y
+            chrome.isExpanded = false
         }
         chrome.isAdjusting = true
         collapseTask?.cancel()
@@ -316,6 +319,10 @@ final class ScreenShelf {
         guard chrome.isAdjusting else { return }
         chrome.isAdjusting = false
         settings.persistAnchor()
+        if chrome.isPinned {
+            chrome.isExpanded = true
+            applyFrame(animated: true)
+        }
     }
 
     func yieldToAnotherShelf() {
