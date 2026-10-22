@@ -130,7 +130,7 @@ final class ShelfPanel: NSPanel {
     init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
-            styleMask: [.borderless, .nonactivatingPanel],
+            styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -139,9 +139,9 @@ final class ShelfPanel: NSPanel {
         becomesKeyOnlyIfNeeded = true
         isMovable = false
         isReleasedWhenClosed = false
-        isOpaque = false
-        backgroundColor = .clear
-        hasShadow = false
+        title = ""
+        titleVisibility = .hidden
+        titlebarAppearsTransparent = true
         level = .floating
         collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
         isExcludedFromWindowsMenu = true

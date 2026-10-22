@@ -71,14 +71,12 @@ Yet macOS's default workflow introduces severe friction:
 
 ### 1. Three Native Placements
 Choose where SnapShelf lives to best fit your display and desktop habits:
-- **Sidebar Tab**: Rests at the left or right screen edge as a minimal glass tab. Hover to reveal; **drag the handle vertically to reposition resting height freely**.
+- **Sidebar Tab**: Collapses to a 16–20 pt edge tab: muted gray when empty, a dot for one item, and a count for multiple items. Hover to reveal; **drag the handle vertically to reposition resting height freely**.
 - **Dynamic Island**: Sits atop the display, wrapping MacBook camera notches and menu bars seamlessly. Operates as an unobtrusive pill and expands upon hover or click.
 - **Dock Companion**: Aligns along the edge of your macOS Dock, adapting automatically to bottom, left, or right Dock configurations.
 
-### 2. Liquid Glass Material
-Engineered with Apple-grade glass refractions and Fresnel edge highlights, available in **Clear** and **Regular** finishes:
-- Matches macOS system design principles;
-- Blends naturally with both Light and Dark appearance modes.
+### 2. System window
+The expanded sidebar and Dock shelf use system windows and follow macOS appearance settings. The app no longer has a separate glass setting. The collapsed sidebar is flat against the screen edge with rounded outer corners; the top capsule stays a black pill along the top of the screen.
 
 ### 3. Automatic Media Capture
 - **Automatic screenshot capture**: Press the system shortcut (`⌃⌘⇧4`) to copy a screenshot, and it instantly drops onto the shelf without overwriting previous clips.
@@ -199,6 +197,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ### Semantic Tags & AI Indexing Keywords
 
-`macOS temporary screenshot manager` · `open source Dropover alternative` · `Yoink alternative Mac` · `clean macOS desktop clutter` · `drag and drop staging shelf` · `native SwiftUI utility` · `772KB macOS app` · `ephemeral clipboard scratchpad` · `Dynamic Island Mac utility` · `Liquid Glass UI`
+`macOS temporary screenshot manager` · `open source Dropover alternative` · `Yoink alternative Mac` · `clean macOS desktop clutter` · `drag and drop staging shelf` · `native SwiftUI utility` · `772KB macOS app` · `ephemeral clipboard scratchpad` · `Mac top capsule utility`
 
 </div>

@@ -10,37 +10,27 @@ struct ShelfView: View {
     var body: some View {
         switch settings.placement {
         case .sidebar:
-            shelfSurface(sidebarContent, shape: panelShape, dark: false)
+            shelfSurface(sidebarContent)
         case .island:
             islandBody
                 .environment(\.colorScheme, .dark)
         case .dock:
             if chrome.isExpanded {
-                shelfSurface(canvas, shape: dockSheetShape, dark: false)
+                shelfSurface(canvas)
             } else {
-                shelfSurface(dockPill, shape: Capsule(style: .continuous), dark: false)
+                shelfSurface(dockPill)
             }
         }
     }
 
-    private func shelfSurface<S: InsettableShape>(_ content: some View, shape: S, dark: Bool) -> some View {
+    private func shelfSurface(_ content: some View) -> some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .modifier(ShelfGlass(shape: shape, dark: dark, appearance: settings.appearance))
-            .id(settings.appearance)
-            .overlay {
-                shape.strokeBorder(
-                    LinearGradient(
-                        colors: [Color.white.opacity(dark ? 0.38 : 0.62), Color.white.opacity(0.1)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.8
-                )
-            }
             .overlay {
                 if chrome.dropTargeted {
-                    shape.strokeBorder(Color.accentColor, lineWidth: 2).padding(3)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color.accentColor, lineWidth: 2)
+                        .padding(3)
                 }
             }
     }
@@ -298,10 +288,6 @@ struct ShelfView: View {
         )
     }
 
-    private var dockSheetShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: ShelfGeometry.cornerRadius, style: .continuous)
-    }
-
     private var dockPill: some View {
         Button(action: chrome.togglePin) {
             Group {
@@ -348,65 +334,96 @@ struct ShelfView: View {
             .contentTransition(.numericText())
     }
 
-    private var panelShape: UnevenRoundedRectangle {
-        let radius = ShelfGeometry.cornerRadius
-        return switch settings.edge {
-        case .left:
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: radius,
-                topTrailingRadius: radius,
-                style: .continuous
-            )
-        case .right:
-            UnevenRoundedRectangle(
-                topLeadingRadius: radius,
-                bottomLeadingRadius: radius,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 0,
-                style: .continuous
-            )
+    @ViewBuilder
+    private var tab: some View {
+        if !chrome.isExpanded {
+            Button(action: chrome.togglePin) {
+                VStack(spacing: 6) {
+                    Circle()
+                        .fill(model.items.isEmpty ? Color.primary.opacity(0.3) : Color.black.opacity(0.75))
+                        .frame(width: 4, height: 4)
+                    if model.items.count > 1 {
+                        Text("\(model.items.count)")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .foregroundStyle(Color.black.opacity(0.82))
+                            .contentTransition(.numericText())
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background {
+                    collapsedTabShape
+                        .fill(LinearGradient(
+                            colors: model.items.isEmpty
+                                ? [Color(nsColor: .windowBackgroundColor), Color(nsColor: .controlBackgroundColor)]
+                                : [Color(red: 1, green: 0.87, blue: 0.32), Color(red: 1, green: 0.78, blue: 0.18)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .overlay {
+                            collapsedTabShape.strokeBorder(
+                                model.items.isEmpty ? Color.primary.opacity(0.18) : Color.white.opacity(0.45),
+                                lineWidth: 0.5
+                            )
+                        }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(L10n.t("help.expand_drop"))
+            .accessibilityLabel(L10n.format("a11y.sidebar", model.items.count))
+            .accessibilityHint(L10n.t("a11y.expand_drop"))
+        } else {
+            VStack(spacing: 10) {
+                Image(systemName: chevron)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.secondary)
+                if let latest = model.items.first {
+                    CachedImage(data: latest.thumbnailPNG)
+                        .frame(width: 32, height: 32)
+                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
+                        }
+                } else {
+                    Image(systemName: "photo")
+                        .font(.system(size: 15, weight: .medium))
+                        .symbolEffect(.bounce, value: model.arrivalCount)
+                }
+                Text(model.items.isEmpty ? L10n.t("action.stash") : "\(model.items.count)")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                Circle()
+                    .fill(chrome.isPinned ? Color.accentColor : Color.clear)
+                    .frame(width: 5, height: 5)
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.tertiary)
+            }
+            .foregroundStyle(.primary)
+            .frame(width: ShelfGeometry.tabWidth)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .help(chrome.isPinned ? L10n.t("help.tab_pinned") : L10n.t("help.tab_unpinned"))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(L10n.format("a11y.sidebar", model.items.count))
+            .accessibilityHint(chrome.isPinned ? L10n.t("a11y.tab_pinned") : L10n.t("a11y.tab_unpinned"))
         }
     }
 
-    private var tab: some View {
-        VStack(spacing: 10) {
-            Image(systemName: chevron)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.secondary)
-            if let latest = model.items.first {
-                CachedImage(data: latest.thumbnailPNG)
-                    .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
-                    }
-            } else {
-                Image(systemName: "photo")
-                    .font(.system(size: 15, weight: .medium))
-                    .symbolEffect(.bounce, value: model.arrivalCount)
-            }
-            Text(model.items.isEmpty ? L10n.t("action.stash") : "\(model.items.count)")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-            Circle()
-                .fill(chrome.isPinned ? Color.accentColor : Color.clear)
-                .frame(width: 5, height: 5)
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.tertiary)
-        }
-        .foregroundStyle(.primary)
-        .frame(width: ShelfGeometry.tabWidth)
-        .frame(maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .help(chrome.isPinned ? L10n.t("help.tab_pinned") : L10n.t("help.tab_unpinned"))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.format("a11y.sidebar", model.items.count))
-        .accessibilityHint(chrome.isPinned ? L10n.t("a11y.tab_pinned") : L10n.t("a11y.tab_unpinned"))
+    private var collapsedTabShape: UnevenRoundedRectangle {
+        let onLeft = settings.edge == .left
+        return UnevenRoundedRectangle(
+            topLeadingRadius: onLeft ? 0 : 14,
+            bottomLeadingRadius: onLeft ? 0 : 14,
+            bottomTrailingRadius: onLeft ? 14 : 0,
+            topTrailingRadius: onLeft ? 14 : 0,
+            style: .continuous
+        )
     }
 
     private var chevron: String {
@@ -780,25 +797,3 @@ private struct IslandMask: InsettableShape {
         return copy
     }
 }
-
-/// macOS 26 draws the plate with the shelf window's glass view.
-/// Earlier systems use a material behind the content.
-private struct ShelfGlass<S: Shape>: ViewModifier {
-    var shape: S
-    var dark: Bool = false
-    var appearance: ShelfAppearance
-
-    func body(content: Content) -> some View {
-        if #available(macOS 26, *) {
-            // The plate is an NSGlassEffectView behind this content.
-            content
-        } else if dark {
-            content.background(Color.black.opacity(0.78), in: shape)
-        } else {
-            content
-                .background(appearance == .regular ? .regularMaterial : .ultraThinMaterial)
-                .clipShape(shape)
-        }
-    }
-}
-

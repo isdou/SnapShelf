@@ -24,7 +24,7 @@ struct ShelfGeometryTests {
         let expanded = ShelfGeometry.frame(expanded: true, visible: visible, edge: .left)
 
         #expect(collapsed.minX == visible.minX)
-        #expect(collapsed.width == ShelfGeometry.tabWidth)
+        #expect(collapsed.width == 16)
         #expect(expanded.minX == visible.minX)
         #expect(expanded.width == ShelfGeometry.expandedWidth)
         #expect(expanded.maxX <= visible.maxX)
@@ -52,6 +52,22 @@ struct ShelfGeometryTests {
         #expect(low.minY >= visible.minY)
         #expect(high.maxY <= visible.maxY)
         #expect(low.minX == visible.minX)
+    }
+
+    @Test func collapsedSidebarTabStaysNarrowAndReflectsContentCount() {
+        let visible = CGRect(x: 0, y: 24, width: 1280, height: 800)
+        let empty = ShelfGeometry.frame(expanded: false, visible: visible, edge: .left)
+        let single = ShelfGeometry.frame(expanded: false, visible: visible, edge: .left, itemCount: 1)
+        let populated = ShelfGeometry.frame(expanded: false, visible: visible, edge: .right, itemCount: 3)
+
+        #expect(empty.width == 16)
+        #expect(empty.height == 48)
+        #expect(single.width == 20)
+        #expect(single.height == 56)
+        #expect(single.minX == visible.minX)
+        #expect(populated.width == 20)
+        #expect(populated.height == 64)
+        #expect(populated.maxX == visible.maxX)
     }
 
     @Test func islandHangsFromTheTopCenter() {

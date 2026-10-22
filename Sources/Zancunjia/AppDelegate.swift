@@ -150,9 +150,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let raw = item.representedObject as? String, let placement = ShelfPlacement(rawValue: raw) {
                 item.state = settings.placement == placement ? .on : .off
             }
-            if let raw = item.representedObject as? String, let appearance = ShelfAppearance(rawValue: raw) {
-                item.state = settings.appearance == appearance ? .on : .off
-            }
             if let submenu = item.submenu {
                 refreshPlacementChecks(in: submenu)
             }
@@ -198,12 +195,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         edgeItem?.title = edgeTitle
     }
 
-    @objc private func chooseAppearance(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String,
-              let appearance = ShelfAppearance(rawValue: raw) else { return }
-        settings.setAppearance(appearance)
-    }
-
     @objc private func clearAll() {
         model?.clear(undoable: true)
     }
@@ -231,13 +222,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .sidebar: L10n.t("placement.sidebar")
         case .island: L10n.t("placement.top_capsule")
         case .dock: L10n.t("placement.dock")
-        }
-    }
-
-    private func appearanceTitle(_ appearance: ShelfAppearance) -> String {
-        switch appearance {
-        case .clear: L10n.t("appearance.clear")
-        case .regular: L10n.t("appearance.frosted")
         }
     }
 
@@ -282,21 +266,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         placementItem.submenu = placementMenu
         menu.addItem(placementItem)
-
-        let appearanceItem = NSMenuItem(title: L10n.t("appearance.glass"), action: nil, keyEquivalent: "")
-        let appearanceMenu = NSMenu()
-        for appearance in [ShelfAppearance.clear, .regular] {
-            let item = appearanceMenu.addItem(
-                withTitle: appearanceTitle(appearance),
-                action: #selector(chooseAppearance(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = appearance.rawValue
-            item.state = settings.appearance == appearance ? .on : .off
-        }
-        appearanceItem.submenu = appearanceMenu
-        menu.addItem(appearanceItem)
 
         let capture = menu.addItem(
             withTitle: L10n.t("settings.auto_collect"),

@@ -58,8 +58,8 @@ codesign -dvvv --entitlements :- "$app" >/dev/null
 
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")"
 build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")"
-[[ "$version" == "1.0" ]] || { echo "unexpected CFBundleShortVersionString: $version" >&2; exit 1; }
-[[ "$build" == "2" ]] || { echo "unexpected CFBundleVersion: $build" >&2; exit 1; }
+[[ "$version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo "invalid CFBundleShortVersionString: $version" >&2; exit 1; }
+[[ "$build" =~ ^[0-9]+$ ]] || { echo "invalid CFBundleVersion: $build" >&2; exit 1; }
 
 pkg="$root/dist/SnapShelf.pkg"
 rm -f "$pkg"

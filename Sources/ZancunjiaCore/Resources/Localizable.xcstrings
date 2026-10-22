@@ -120,57 +120,6 @@
         }
       }
     },
-    "appearance.glass": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Glass Effect"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "玻璃效果"
-          }
-        }
-      }
-    },
-    "appearance.clear": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clear"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清透"
-          }
-        }
-      }
-    },
-    "appearance.frosted": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Frosted"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "磨砂"
-          }
-        }
-      }
-    },
     "settings.auto_collect": {
       "extractionState": "manual",
       "localizations": {

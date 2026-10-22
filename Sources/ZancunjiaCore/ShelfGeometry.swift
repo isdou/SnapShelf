@@ -48,7 +48,6 @@ public nonisolated enum ShelfGeometry {
     public static let tabWidth: CGFloat = 52
     public static let tabHeight: CGFloat = 168
     public static let expandedWidth: CGFloat = 420
-    public static let cornerRadius: CGFloat = 22
 
     /// `anchor` is where the sidebar wants to sit, from 0 at the bottom of the
     /// visible frame to 1 at the top. Island ignores it.
@@ -90,10 +89,11 @@ public nonisolated enum ShelfGeometry {
         itemCount: Int,
         anchor: CGFloat
     ) -> CGRect {
-        let width = expanded ? min(expandedWidth, max(tabWidth, visible.width - 32)) : tabWidth
+        let collapsedWidth: CGFloat = itemCount == 0 ? 16 : 20
+        let width = expanded ? min(expandedWidth, max(tabWidth, visible.width - 32)) : collapsedWidth
         let preferredHeight = expanded
             ? expandedHeight(itemCount: itemCount, visibleHeight: visible.height)
-            : min(tabHeight, visible.height - 24)
+            : min(itemCount == 0 ? 48 : (itemCount == 1 ? 56 : 64), visible.height - 24)
         let height = min(max(preferredHeight, 1), visible.height)
         let proposedMid = visible.minY + min(max(anchor, 0), 1) * visible.height
         let y = min(max(proposedMid - height / 2, visible.minY), visible.maxY - height)

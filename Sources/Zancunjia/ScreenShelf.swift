@@ -1,5 +1,4 @@
 import AppKit
-import ObjectiveC
 import QuartzCore
 import SwiftUI
 import ZancunjiaCore
@@ -16,10 +15,6 @@ final class ScreenShelf {
     private let settings: ShelfSettings
     private weak var controller: ShelfPanelController?
     private var collapseTask: Task<Void, Never>?
-    /// AppKit glass behind the SwiftUI content. SwiftUI's own glass view is not
-    /// an `NSGlassEffectView`, so the two plates cannot be pinned from there.
-    private var glassPlate: NSView?
-    private var glassPin: Task<Void, Never>?
 
     init(screen: NSScreen, model: ShelfModel, settings: ShelfSettings, controller: ShelfPanelController) {
         self.id = screen.shelfID
@@ -38,13 +33,6 @@ final class ScreenShelf {
         hosting.sizingOptions = []
         hosting.safeAreaRegions = []
         hosting.autoresizingMask = [.width, .height]
-        if #available(macOS 26, *) {
-            let glass = ShelfGlassPlate(frame: host.bounds)
-            glass.autoresizingMask = [.width, .height]
-            glass.cornerRadius = ShelfGeometry.cornerRadius
-            host.addSubview(glass)
-            glassPlate = glass
-        }
         host.embed(hosting)
         host.addSubview(handle)
         handle.onClick = { [weak self] in self?.togglePin() }
@@ -79,109 +67,6 @@ final class ScreenShelf {
         }
         applyFrame(animated: false)
         trackItems()
-        trackAppearance()
-        updateGlassPlate()
-    }
-
-    private func trackAppearance() {
-        withObservationTracking {
-            _ = settings.appearance
-            _ = settings.placement
-        } onChange: { [weak self] in
-            Task { @MainActor in
-                guard let self else { return }
-                self.updateGlassPlate()
-                self.trackAppearance()
-            }
-        }
-    }
-
-    /// Adaptation stays off so a light window cannot flip the plate on its own.
-    /// The "clear" appearance uses the regular sample you can see the desktop through.
-    /// The "regular" (frosted) appearance uses the clear style, which settles into the darker gray plate.
-    private func updateGlassPlate() {
-        guard #available(macOS 26, *), let glass = glassPlate as? ShelfGlassPlate else { return }
-        glass.isHidden = settings.placement == .island
-        glass.frame = host.bounds
-        let clear = settings.appearance == .clear
-        glass.tintColor = nil
-        setGlassInt(glass, "set_adaptiveAppearance:", 1)
-        // Clear style is the darker plate that hides the desktop. Regular style
-        // plus a light backdrop sample is the one you can see the wallpaper through.
-        glass.style = clear ? .regular : .clear
-        glass.seeThrough = clear
-        glass.backdropScale = clear ? 0.04 : 1
-        let radius = ShelfGeometry.cornerRadius
-        let bounds = glass.bounds
-        let path: CGPath
-        if settings.placement == .dock, !chrome.isExpanded {
-            let capsule = min(bounds.width, bounds.height) / 2
-            path = unevenPath(bounds, topLeft: capsule, topRight: capsule, bottomRight: capsule, bottomLeft: capsule)
-        } else if settings.placement == .sidebar {
-            let onLeft = settings.edge == .left
-            path = unevenPath(
-                bounds,
-                topLeft: onLeft ? 0 : radius,
-                topRight: onLeft ? radius : 0,
-                bottomRight: onLeft ? radius : 0,
-                bottomLeft: onLeft ? 0 : radius
-            )
-        } else {
-            path = unevenPath(bounds, topLeft: radius, topRight: radius, bottomRight: radius, bottomLeft: radius)
-        }
-        glass.cornerRadius = radius
-        setGlassPath(glass, path: path)
-        let seeThrough = glass.seeThrough
-        glassPin?.cancel()
-        glassPin = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(700))
-            guard !Task.isCancelled, glass.seeThrough == seeThrough else { return }
-            glass.pinBackdropScale()
-        }
-    }
-
-    private func unevenPath(
-        _ rect: CGRect,
-        topLeft: CGFloat,
-        topRight: CGFloat,
-        bottomRight: CGFloat,
-        bottomLeft: CGFloat
-    ) -> CGPath {
-        let path = CGMutablePath()
-        func turn(to corner: CGPoint, then next: CGPoint, radius: CGFloat) {
-            if radius > 0 {
-                path.addArc(tangent1End: corner, tangent2End: next, radius: radius)
-            } else {
-                path.addLine(to: corner)
-            }
-        }
-        path.move(to: CGPoint(x: rect.minX + topLeft, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.maxX - topRight, y: rect.maxY))
-        turn(to: CGPoint(x: rect.maxX, y: rect.maxY), then: CGPoint(x: rect.maxX, y: rect.maxY - topRight), radius: topRight)
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + bottomRight))
-        turn(to: CGPoint(x: rect.maxX, y: rect.minY), then: CGPoint(x: rect.maxX - bottomRight, y: rect.minY), radius: bottomRight)
-        path.addLine(to: CGPoint(x: rect.minX + bottomLeft, y: rect.minY))
-        turn(to: CGPoint(x: rect.minX, y: rect.minY), then: CGPoint(x: rect.minX, y: rect.minY + bottomLeft), radius: bottomLeft)
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - topLeft))
-        turn(to: CGPoint(x: rect.minX, y: rect.maxY), then: CGPoint(x: rect.minX + topLeft, y: rect.maxY), radius: topLeft)
-        path.closeSubpath()
-        return path
-    }
-
-    private func setGlassPath(_ view: NSView, path: CGPath) {
-        let sel = NSSelectorFromString("_setPath:")
-        guard view.responds(to: sel), let method = class_getInstanceMethod(type(of: view), sel) else { return }
-        typealias Fn = @convention(c) (AnyObject, Selector, CGPath) -> Void
-        let fn = unsafeBitCast(method_getImplementation(method), to: Fn.self)
-        fn(view, sel, path)
-    }
-
-    private func setGlassInt(_ view: NSView, _ setter: String, _ value: Int) {
-        let sel = NSSelectorFromString(setter)
-        guard view.responds(to: sel), let method = class_getInstanceMethod(type(of: view), sel) else { return }
-        typealias Fn = @convention(c) (AnyObject, Selector, Int) -> Void
-        let fn = unsafeBitCast(method_getImplementation(method), to: Fn.self)
-        fn(view, sel, value)
     }
 
     private func trackItems() {
@@ -216,8 +101,10 @@ final class ScreenShelf {
     func applyFrame(animated: Bool) {
         let visible = screen.visibleFrame
         guard visible.width > 1, visible.height > 1 else { return }
+        updateWindowStyle()
         if !panel.isVisible {
             panel.orderFrontRegardless()
+            updateWindowStyle()
         }
         if settings.placement == .dock {
             let dock = DockLocator.metrics(for: screen) ?? DockMetrics(tile: .null, side: .bottom, hidden: true)
@@ -244,6 +131,37 @@ final class ScreenShelf {
         placeHandle()
     }
 
+    /// Only open shelves use the system window plate; the collapsed sidebar
+    /// draws its own edge so the screen-facing side stays flat.
+    private func updateWindowStyle() {
+        let customPlate = settings.placement == .island
+            || (settings.placement == .sidebar && !chrome.isExpanded)
+        let mask: NSWindow.StyleMask = customPlate
+            ? [.borderless, .nonactivatingPanel]
+            : [.titled, .fullSizeContentView, .nonactivatingPanel]
+        if panel.styleMask != mask {
+            panel.styleMask = mask
+            if panel.contentView !== host {
+                panel.contentView = host
+            }
+        }
+        if customPlate {
+            panel.isOpaque = false
+            panel.backgroundColor = .clear
+            panel.hasShadow = false
+            return
+        }
+        panel.isOpaque = true
+        panel.backgroundColor = .windowBackgroundColor
+        panel.hasShadow = true
+        panel.title = ""
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        for kind: NSWindow.ButtonType in [.closeButton, .miniaturizeButton, .zoomButton] {
+            panel.standardWindowButton(kind)?.isHidden = true
+        }
+    }
+
     private func windowLevel(for target: CGRect, visible: CGRect) -> NSWindow.Level {
         switch settings.placement {
         case .island:
@@ -264,7 +182,6 @@ final class ScreenShelf {
     }
 
     private func placeHandle() {
-        updateGlassPlate()
         guard settings.placement == .sidebar else {
             handle.isHidden = true
             return
@@ -417,64 +334,5 @@ final class ScreenShelf {
         }
         chrome.isExpanded = false
         applyFrame(animated: true)
-    }
-}
-
-/// Pins the glass backdrop after AppKit resets it during layout.
-@available(macOS 26, *)
-private final class ShelfGlassPlate: NSGlassEffectView {
-    var backdropScale: CGFloat = 0.5
-    /// Regular glass with an extra backdrop blur. This is the plate you can see through.
-    var seeThrough = false
-
-    override func layout() {
-        super.layout()
-        pinScale(layer)
-    }
-
-    func pinBackdropScale() {
-        pinScale(layer)
-        pinFilters(layer)
-    }
-
-    private func pinScale(_ layer: CALayer?) {
-        guard let layer else { return }
-        if String(describing: type(of: layer)) == "CABackdropLayer" {
-            layer.setValue(backdropScale, forKey: "scale")
-        }
-        let children = layer.sublayers ?? []
-        for sublayer in children {
-            pinScale(sublayer)
-        }
-    }
-
-    private func pinFilters(_ layer: CALayer?) {
-        guard let layer else { return }
-        if String(describing: type(of: layer)) == "CABackdropLayer" {
-            let existing = (layer.value(forKey: "filters") as? [NSObject]) ?? []
-            let glass = existing.filter { String(describing: $0) == "glassBackground" }
-            // Removing glassBackground drops the plate and the shelf content with it.
-            guard !glass.isEmpty else { return }
-            if seeThrough, let blur = gaussianBlur(radius: 36) {
-                layer.setValue(glass + [blur], forKey: "filters")
-            } else {
-                layer.setValue(glass, forKey: "filters")
-            }
-        }
-        let children = layer.sublayers ?? []
-        for sublayer in children {
-            pinFilters(sublayer)
-        }
-    }
-
-    private func gaussianBlur(radius: CGFloat) -> NSObject? {
-        guard let cls = NSClassFromString("CAFilter") else { return nil }
-        let sel = NSSelectorFromString("filterWithType:")
-        guard let method = class_getClassMethod(cls, sel) else { return nil }
-        typealias Make = @convention(c) (AnyClass, Selector, NSString) -> Unmanaged<NSObject>?
-        // filterWithType: returns an autoreleased object.
-        let filter = unsafeBitCast(method_getImplementation(method), to: Make.self)(cls, sel, "gaussianBlur")?.takeUnretainedValue()
-        filter?.setValue(radius, forKey: "inputRadius")
-        return filter
     }
 }
