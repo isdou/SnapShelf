@@ -137,18 +137,21 @@ struct ShelfView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 6) {
+                    LazyVGrid(columns: columns, spacing: 10) {
                         ForEach(model.items) { item in
-                            islandRow(item)
+                            ScreenshotCell(model: model, item: item, imageHeight: cellHeight)
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 6)
-                    .padding(.bottom, 16)
+                    .padding(14)
                 }
                 .scrollContentBackground(.hidden)
+                Text(footerHint)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .padding(.bottom, 12)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Sits in the menu-bar band. The title stays in the left ear and the buttons
@@ -194,98 +197,6 @@ struct ShelfView: View {
     private var islandCountTitle: String {
         if !model.selectedIDs.isEmpty { return L10n.format("status.selected", model.selectedIDs.count) }
         return model.items.isEmpty ? L10n.t("action.stash") : L10n.format("status.items", model.items.count)
-    }
-
-    private static let islandDateStyle = Date.FormatStyle(date: .omitted, time: .standard)
-        .locale(.autoupdatingCurrent)
-
-    private func islandClock(_ date: Date) -> String {
-        date.formatted(Self.islandDateStyle)
-    }
-
-    private func islandRow(_ item: ScratchItem) -> some View {
-        ZStack {
-            HStack(spacing: 12) {
-                CachedImage(data: item.thumbnailPNG)
-                    .frame(width: 52, height: 36)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(islandClock(item.createdAt))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    TimelineView(.periodic(from: item.createdAt, by: 30)) { context in
-                        Text("\(item.pixelWidth)×\(item.pixelHeight) · \(formatAge(item.createdAt, now: context.date))")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 8)
-                Text(itemTag(item))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.82))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.14), in: Capsule())
-                Color.clear.frame(width: 18, height: 18)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(
-                model.selectedIDs.contains(item.id) ? Color.accentColor.opacity(0.2) : Color.white.opacity(0.06),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(model.selectedIDs.contains(item.id) ? Color.accentColor : .clear, lineWidth: 2)
-            }
-            DragThumb(
-                item: item,
-                dragItems: model.itemsForAction(startingWith: item.id),
-                onClick: { handleClick(item, modifiers: $0) },
-                onQuickLook: { preview(item) },
-                onClearSelection: model.clearSelection
-            )
-            HStack {
-                Spacer(minLength: 0)
-                Button {
-                    withAnimation(.snappy(duration: 0.22)) { model.remove(item.id, undoable: true) }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.72))
-                        .frame(width: 18, height: 18)
-                }
-                .buttonStyle(.plain)
-                .help(L10n.t("action.remove"))
-                .accessibilityLabel(L10n.t("action.remove"))
-            }
-            .padding(.trailing, 12)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(mediaAccessibilityLabel(for: item))
-        .accessibilityHint(L10n.t("a11y.item_hint"))
-        .help(L10n.t("help.click_copy"))
-        .accessibilityAction(named: model.selectedIDs.contains(item.id) ? L10n.t("action.deselect") : L10n.t("action.select")) {
-            model.toggleSelection(item.id)
-        }
-        .accessibilityAction(named: L10n.t("action.preview")) { preview(item) }
-    }
-
-    private func handleClick(_ item: ScratchItem, modifiers: NSEvent.ModifierFlags) {
-        if modifiers.contains(.command) {
-            model.toggleSelection(item.id)
-        } else {
-            model.copy(item.id)
-        }
-    }
-
-    private func preview(_ item: ScratchItem) {
-        ShelfQuickLook.shared.show(
-            items: model.itemsForAction(startingWith: item.id),
-            startingWith: item.id
-        )
     }
 
     private var dockPill: some View {
@@ -700,20 +611,6 @@ private func formatAge(_ date: Date, now: Date) -> String {
     if seconds < 45 { return L10n.t("time.just_now") }
     if seconds < 3600 { return L10n.format("time.minutes_ago", max(1, Int(seconds / 60))) }
     return date.formatted(date: .omitted, time: .shortened)
-}
-
-@MainActor
-private func itemTag(_ item: ScratchItem) -> String {
-    switch item.kind {
-    case .livePhoto:
-        return "LIVE"
-    case .video:
-        let ext = item.fileURL.pathExtension.uppercased()
-        return ext.isEmpty ? "VIDEO" : ext
-    case .image:
-        let ext = item.fileURL.pathExtension.uppercased()
-        return ext.isEmpty ? "PNG" : ext
-    }
 }
 
 @MainActor

@@ -116,11 +116,13 @@ public nonisolated enum ShelfGeometry {
         let width: CGFloat
         let height: CGFloat
         if expanded {
+            // Same image grid as the sidebar, so the sheet is tall enough for
+            // those cells instead of a one-line metadata row.
             width = min(548, max(320, screen.width - 40))
-            let contentHeight = itemCount == 0
-                ? 220
-                : max(128, 56 + CGFloat(min(itemCount, 6)) * 60)
-            height = min(contentHeight, 380, max(screen.height - 8, 1))
+            height = min(
+                expandedHeight(itemCount: itemCount, visibleHeight: screen.height),
+                max(screen.height - 8, 1)
+            )
         } else if let notch {
             // Ears sit in the menu bar, just outside the camera housing.
             width = notch.width + 70

@@ -15,7 +15,13 @@ final class ShelfSettings {
         let edgeRaw = UserDefaults.standard.string(forKey: Self.edgeKey) ?? ""
         edge = ShelfEdge(rawValue: edgeRaw) ?? .left
         let placementRaw = UserDefaults.standard.string(forKey: Self.placementKey) ?? ""
-        placement = ShelfPlacement(rawValue: placementRaw) ?? .sidebar
+        let stored = ShelfPlacement(rawValue: placementRaw) ?? .sidebar
+        // Dock is no longer a placement. An old saved value opens as the sidebar.
+        let resolved: ShelfPlacement = stored == .dock ? .sidebar : stored
+        placement = resolved
+        if stored == .dock {
+            UserDefaults.standard.set(resolved.rawValue, forKey: Self.placementKey)
+        }
         captureEnabled = UserDefaults.standard.object(forKey: Self.captureKey) as? Bool ?? true
         let storedAnchor = UserDefaults.standard.object(forKey: Self.anchorKey) as? Double
         anchor = storedAnchor.map { min(max($0, 0), 1) } ?? 0.5
@@ -27,6 +33,7 @@ final class ShelfSettings {
     }
 
     func setPlacement(_ placement: ShelfPlacement) {
+        let placement: ShelfPlacement = placement == .dock ? .sidebar : placement
         self.placement = placement
         UserDefaults.standard.set(placement.rawValue, forKey: Self.placementKey)
     }

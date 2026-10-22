@@ -254,7 +254,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let placementItem = NSMenuItem(title: L10n.t("menu.appear_in"), action: nil, keyEquivalent: "")
         let placementMenu = NSMenu()
-        for placement in [ShelfPlacement.sidebar, .island, .dock] {
+        for placement in [ShelfPlacement.sidebar, .island] {
             let item = placementMenu.addItem(
                 withTitle: placementTitle(placement),
                 action: #selector(choosePlacement(_:)),

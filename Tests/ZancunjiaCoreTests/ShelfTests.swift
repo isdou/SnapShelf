@@ -108,7 +108,7 @@ struct ShelfGeometryTests {
         #expect(expanded.maxY == full.maxY)
         #expect(expanded.minY < notch.minY)
         #expect(abs(expanded.width - 548) < 1)
-        #expect(abs(expanded.height - 176) < 1)
+        #expect(abs(expanded.height - 360) < 1)
         #expect(abs(expanded.midX - notch.midX) < 1)
     }
 
@@ -121,8 +121,8 @@ struct ShelfGeometryTests {
             expanded: true, visible: screen, edge: .left, itemCount: 20, placement: .island, full: screen
         )
 
-        #expect(one.height == 128)
-        #expect(many.height == 380)
+        #expect(one.height == 430)
+        #expect(many.height == 720)
     }
 
     @Test func dockPillSitsInTheGapBesideABottomDock() {
